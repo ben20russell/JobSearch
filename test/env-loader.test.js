@@ -20,3 +20,14 @@ test('applyEnvContent loads .env values and preserves pre-existing env vars', ()
   assert.equal(nextEnv.AZURE_OPENAI_DEPLOYMENT_NAME, 'my-deployment');
   assert.equal(nextEnv.KEEP_ME, 'original');
 });
+
+test('applyEnvContent can override existing env vars when configured', () => {
+  const initialEnv = {
+    AZURE_OPENAI_ENDPOINT: 'https://old.services.ai.azure.com/api/projects/old/openai/v1',
+  };
+
+  const content = 'AZURE_OPENAI_ENDPOINT=https://jobleads.cognitiveservices.azure.com/';
+  const nextEnv = applyEnvContent(content, initialEnv, { overrideExisting: true });
+
+  assert.equal(nextEnv.AZURE_OPENAI_ENDPOINT, 'https://jobleads.cognitiveservices.azure.com/');
+});

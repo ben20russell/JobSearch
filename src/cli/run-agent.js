@@ -15,7 +15,7 @@ async function run() {
   console.log('[agent] starting lead discovery pipeline');
 
   const envFilePath = path.join(projectRoot, '.env.local');
-  await loadEnvLocalFile({ filePath: envFilePath });
+  await loadEnvLocalFile({ filePath: envFilePath, overrideExisting: true });
 
   const client = new AzureOpenAILeadClient({
     apiKey: process.env.AZURE_OPENAI_API_KEY,

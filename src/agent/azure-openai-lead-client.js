@@ -1,6 +1,6 @@
 import OpenAI, { AzureOpenAI } from 'openai';
 import { z } from 'zod';
-import { zodResponseFormat } from 'openai/helpers/zod';
+import { zodTextFormat } from 'openai/helpers/zod';
 import { withRetry } from './retry.js';
 
 const ContactSchema = z.object({
@@ -79,7 +79,7 @@ export class AzureOpenAILeadClient {
           model: this.deployment,
           input: buildPrompt({ modelNotes }),
           text: {
-            format: zodResponseFormat(LeadSearchSchema, 'lead_search_output'),
+            format: buildLeadSearchTextFormat(),
           },
         });
 
@@ -95,6 +95,10 @@ export class AzureOpenAILeadClient {
       { label: 'azure-openai:lead-search' }
     );
   }
+}
+
+export function buildLeadSearchTextFormat() {
+  return zodTextFormat(LeadSearchSchema, 'lead_search_output');
 }
 
 export function normalizeAndValidateAzureEndpoint(rawEndpoint) {

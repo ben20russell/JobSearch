@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 
-export async function loadEnvLocalFile({ filePath, env = process.env } = {}) {
+export async function loadEnvLocalFile({ filePath, env = process.env, overrideExisting = false } = {}) {
   if (!filePath) {
     console.log('[env-loader] no env file path provided');
     return env;
@@ -8,10 +8,10 @@ export async function loadEnvLocalFile({ filePath, env = process.env } = {}) {
 
   try {
     const content = await fs.readFile(filePath, 'utf8');
-    const nextEnv = applyEnvContent(content, env);
+    const nextEnv = applyEnvContent(content, env, { overrideExisting });
 
     for (const [key, value] of Object.entries(nextEnv)) {
-      if (env[key] == null && value != null) {
+      if ((env[key] == null || overrideExisting) && value != null) {
         env[key] = value;
       }
     }
@@ -27,7 +27,7 @@ export async function loadEnvLocalFile({ filePath, env = process.env } = {}) {
   }
 }
 
-export function applyEnvContent(content, baseEnv = process.env) {
+export function applyEnvContent(content, baseEnv = process.env, { overrideExisting = false } = {}) {
   const nextEnv = { ...baseEnv };
   const lines = String(content || '').split(/\r?\n/);
 
@@ -47,7 +47,7 @@ export function applyEnvContent(content, baseEnv = process.env) {
       value = value.slice(1, -1);
     }
 
-    if (nextEnv[key] == null) {
+    if (nextEnv[key] == null || overrideExisting) {
       nextEnv[key] = value;
     }
   }
