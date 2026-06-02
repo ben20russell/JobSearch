@@ -56,11 +56,12 @@ function buildIntroEmailBody({ firstName = 'there', agencyName = 'your agency' }
   return [
     `Hi ${firstName},`,
     '',
-    `I wanted to start a conversation with you about strategy opportunities at ${agencyName}.`,
+    `I wanted to introduce myself and start a conversation with you about strategy opportunities at ${agencyName}.`,
     '',
     'INSERT BODY COPY',
-    
+    '',
     'Excited to hear your thoughts!',
+    'Ben',
     '',
   ].join('\n');
 }
