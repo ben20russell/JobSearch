@@ -1,0 +1,17 @@
+{
+  "name": "job-search-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "lint": "node scripts/lint.js",
+    "build": "node scripts/build.js",
+    "start": "node src/cli/run-agent.js",
+    "dev": "node scripts/dev-server.js"
+  },
+  "dependencies": {
+    "openai": "^6.33.0",
+    "zod": "^3.24.1"
+  }
+}
