@@ -131,3 +131,32 @@ test('writeRowsToGoogleSheet clears then writes values', async () => {
   assert.equal(calls[1].args.valueInputOption, 'USER_ENTERED');
   assert.equal(calls[1].args.requestBody.values.length, 2);
 });
+
+test('writeRowsToGoogleSheet defaults to sorting by employee_count descending', async () => {
+  const calls = [];
+  const sheets = {
+    spreadsheets: {
+      values: {
+        clear: async (args) => {
+          calls.push({ type: 'clear', args });
+        },
+        update: async (args) => {
+          calls.push({ type: 'update', args });
+        },
+      },
+    },
+  };
+
+  const unsortedRows = [
+    { ...SAMPLE_ROWS[0], agency_name: 'Small Co', employee_count: 25, contact_email: 'small@example.com' },
+    { ...SAMPLE_ROWS[0], agency_name: 'Large Co', employee_count: 150, contact_email: 'large@example.com' },
+    { ...SAMPLE_ROWS[0], agency_name: 'Mid Co', employee_count: 80, contact_email: 'mid@example.com' },
+  ];
+
+  await writeRowsToGoogleSheet({ sheets, spreadsheetId: DEFAULT_GOOGLE_SHEET_ID, tabName: 'Sheet1', rows: unsortedRows });
+
+  const values = calls[1].args.requestBody.values;
+  assert.equal(values[1][0], 'Large Co');
+  assert.equal(values[2][0], 'Mid Co');
+  assert.equal(values[3][0], 'Small Co');
+});

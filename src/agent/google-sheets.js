@@ -207,14 +207,28 @@ export async function readRowsFromGoogleSheet({ sheets, spreadsheetId, tabName }
 }
 
 export async function writeRowsToGoogleSheet({ sheets, spreadsheetId, tabName, rows }) {
-  console.log('[sheets] writing rows', { spreadsheetId, tabName, rows: rows.length });
+  const sortableRows = Array.isArray(rows) ? rows : [];
+  const sortedRows = sortableRows
+    .map((row, index) => ({ row, index }))
+    .sort((left, right) => {
+      const leftCount = Number(left.row?.employee_count);
+      const rightCount = Number(right.row?.employee_count);
+      const leftValue = Number.isFinite(leftCount) ? leftCount : Number.NEGATIVE_INFINITY;
+      const rightValue = Number.isFinite(rightCount) ? rightCount : Number.NEGATIVE_INFINITY;
+
+      if (rightValue !== leftValue) return rightValue - leftValue;
+      return left.index - right.index;
+    })
+    .map((entry) => entry.row);
+
+  console.log('[sheets] writing rows', { spreadsheetId, tabName, rows: sortedRows.length });
 
   await sheets.spreadsheets.values.clear({
     spreadsheetId,
     range: `${tabName}!A:Z`,
   });
 
-  const values = toSheetValues(rows);
+  const values = toSheetValues(sortedRows);
 
   await sheets.spreadsheets.values.update({
     spreadsheetId,
@@ -223,7 +237,7 @@ export async function writeRowsToGoogleSheet({ sheets, spreadsheetId, tabName, r
     requestBody: { values },
   });
 
-  console.log('[sheets] write complete', { rowsWritten: rows.length });
+  console.log('[sheets] write complete', { rowsWritten: sortedRows.length });
 }
 
 export async function createGoogleSheetsStore(env = process.env) {
