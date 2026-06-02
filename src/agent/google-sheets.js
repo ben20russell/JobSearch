@@ -6,6 +6,9 @@ export const DEFAULT_GOOGLE_SHEET_ID = '1N4XsyA4IICyEFxlSH-m3uoePU8EMDBywQVauMz9
 const DEFAULT_TAB_NAME = 'Sheet1';
 const GOOGLE_SHEETS_SCOPE = ['https://www.googleapis.com/auth/spreadsheets'];
 const CONTACT_EMAIL_HEADER = 'contact_email';
+const CONTACT_NAME_HEADER = 'contact_name';
+const AGENCY_NAME_HEADER = 'agency_name';
+const EMAIL_SUBJECT = 'Intro + Strategy Convo';
 
 function escapeFormulaLiteral(value) {
   return String(value || '').replaceAll('"', '""');
@@ -27,12 +30,52 @@ function extractEmailAddress(rawValue) {
   return '';
 }
 
-export function toGmailComposeHyperlink(email) {
+export function toGmailComposeHyperlink(email, { firstName = 'there', agencyName = 'your agency' } = {}) {
   const normalizedEmail = extractEmailAddress(email);
   if (!normalizedEmail) return '';
 
-  const escapedEmail = escapeFormulaLiteral(normalizedEmail);
-  return `=HYPERLINK("https://mail.google.com/mail/?view=cm&fs=1&to=${escapedEmail}","${escapedEmail}")`;
+  const encodedEmail = encodeURIComponent(normalizedEmail);
+  const encodedSubject = encodeURIComponent(EMAIL_SUBJECT);
+  const encodedBody = encodeURIComponent(buildIntroEmailBody({ firstName, agencyName }));
+  const escapedLabel = escapeFormulaLiteral(normalizedEmail);
+  const composeUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodedEmail}&su=${encodedSubject}&body=${encodedBody}`;
+
+  return `=HYPERLINK("${composeUrl}","${escapedLabel}")`;
+}
+
+function extractFirstName(fullName) {
+  const normalized = String(fullName || '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!normalized) return 'there';
+  const [firstName] = normalized.split(' ');
+  return firstName || 'there';
+}
+
+function buildIntroEmailBody({ firstName = 'there', agencyName = 'your agency' } = {}) {
+  return [
+    `Hi ${firstName},`,
+    '',
+    `I wanted to start a conversation with you about strategy opportunities at ${agencyName}.`,
+    '',
+    "A little about me. For the last 16 years I've been building brand strategies, creative campaigns and standardizing  strategic and creative processes across agency teams.",
+    '',
+    "Most recently, I’ve been working with AI brands, and even built my own AI model to generate more structured, precise and faster audience research. It's called Brand Atlas.",
+    '',
+    'Can we set up time to get to know each other better?',
+    '',
+    'Brand Atlas:',
+    'https://brandatlas.vercel.app/',
+    '',
+    'Resume:',
+    'https://drive.google.com/file/d/1AP0uSJ3UvYVavdH36699jTabP5AH5OAW/view',
+    '',
+    'Portfolio:',
+    'https://benrussell.myportfolio.com/',
+    '',
+    'Excited to hear your thoughts!',
+    '',
+  ].join('\n');
 }
 
 export function extractSpreadsheetId(rawValue) {
@@ -122,10 +165,16 @@ export function toSheetValues(rows) {
   const lines = [CSV_HEADERS];
 
   for (const row of rows || []) {
+    const firstName = extractFirstName(row?.[CONTACT_NAME_HEADER]);
+    const agencyName = String(row?.[AGENCY_NAME_HEADER] || '').trim() || 'your agency';
+
     lines.push(
       CSV_HEADERS.map((header) => {
         if (header === CONTACT_EMAIL_HEADER) {
-          return toGmailComposeHyperlink(row?.[header]);
+          return toGmailComposeHyperlink(row?.[header], {
+            firstName,
+            agencyName,
+          });
         }
         return String(row?.[header] ?? '');
       })

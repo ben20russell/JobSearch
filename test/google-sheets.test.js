@@ -29,6 +29,12 @@ const SAMPLE_ROWS = [
   },
 ];
 
+function extractComposeUrl(formula) {
+  const match = String(formula || '').match(/^=HYPERLINK\("([^"]+)","([^"]+)"\)$/);
+  assert.ok(match, 'expected a valid HYPERLINK formula');
+  return { url: match[1], label: match[2] };
+}
+
 test('extractSpreadsheetId handles Google Sheets URL and raw id', () => {
   const idFromUrl = extractSpreadsheetId('https://docs.google.com/spreadsheets/d/1N4XsyA4IICyEFxlSH-m3uoePU8EMDBywQVauMz9wNQE/edit?usp=sharing');
   assert.equal(idFromUrl, DEFAULT_GOOGLE_SHEET_ID);
@@ -39,27 +45,44 @@ test('toSheetValues and fromSheetValues round-trip rows', () => {
   const values = toSheetValues(SAMPLE_ROWS);
   assert.equal(values.length, 2);
   assert.equal(values[1][0], 'Northstar Marketing');
-  assert.equal(
-    values[1][9],
-    '=HYPERLINK("https://mail.google.com/mail/?view=cm&fs=1&to=casey@northstar.example","casey@northstar.example")'
-  );
+  const compose = extractComposeUrl(values[1][9]);
+  assert.equal(compose.label, 'casey@northstar.example');
+  assert.ok(compose.url.includes('to=casey%40northstar.example'));
+  assert.ok(compose.url.includes('su=Intro%20%2B%20Strategy%20Convo'));
+  assert.ok(compose.url.includes('body=Hi%20Casey'));
+  assert.ok(compose.url.includes('strategy%20opportunities%20at%20Northstar%20Marketing'));
+  assert.ok(compose.url.includes('Brand%20Atlas'));
+  assert.ok(compose.url.includes('https%3A%2F%2Fbrandatlas.vercel.app%2F'));
+  assert.ok(compose.url.includes('https%3A%2F%2Fdrive.google.com%2Ffile%2Fd%2F1AP0uSJ3UvYVavdH36699jTabP5AH5OAW%2Fview'));
+  assert.ok(compose.url.includes('https%3A%2F%2Fbenrussell.myportfolio.com%2F'));
+  assert.ok(!compose.url.includes('%0ABen'));
 
   const roundTrip = fromSheetValues(values);
   assert.equal(roundTrip.length, 1);
   assert.equal(roundTrip[0].company_domain, 'northstar.example');
-  assert.equal(
-    roundTrip[0].contact_email,
-    '=HYPERLINK("https://mail.google.com/mail/?view=cm&fs=1&to=casey@northstar.example","casey@northstar.example")'
-  );
+  assert.equal(roundTrip[0].contact_email, values[1][9]);
 });
 
 test('toGmailComposeHyperlink normalizes nested formula input', () => {
   const nested = '=HYPERLINK("https://mail.google.com/mail/?view=cm&fs=1&to==HYPERLINK(""https://mail.google.com/mail/?view=cm&fs=1&to=casey@northstar.example"",""casey@northstar.example"")","=HYPERLINK(""https://mail.google.com/mail/?view=cm&fs=1&to=casey@northstar.example"",""casey@northstar.example"")")';
   const formula = toGmailComposeHyperlink(nested);
-  assert.equal(
-    formula,
-    '=HYPERLINK("https://mail.google.com/mail/?view=cm&fs=1&to=casey@northstar.example","casey@northstar.example")'
-  );
+  const compose = extractComposeUrl(formula);
+  assert.equal(compose.label, 'casey@northstar.example');
+  assert.ok(compose.url.includes('to=casey%40northstar.example'));
+  assert.ok(compose.url.includes('body=Hi%20there'));
+});
+
+test('toGmailComposeHyperlink falls back to defaults when name and agency are missing', () => {
+  const formula = toGmailComposeHyperlink('casey@northstar.example');
+  const compose = extractComposeUrl(formula);
+  assert.equal(compose.label, 'casey@northstar.example');
+  assert.ok(compose.url.includes('su=Intro%20%2B%20Strategy%20Convo'));
+  assert.ok(compose.url.includes('body=Hi%20there'));
+  assert.ok(compose.url.includes('your%20agency'));
+  assert.ok(compose.url.includes('https%3A%2F%2Fbrandatlas.vercel.app%2F'));
+  assert.ok(compose.url.includes('https%3A%2F%2Fdrive.google.com%2Ffile%2Fd%2F1AP0uSJ3UvYVavdH36699jTabP5AH5OAW%2Fview'));
+  assert.ok(compose.url.includes('https%3A%2F%2Fbenrussell.myportfolio.com%2F'));
+  assert.ok(!compose.url.includes('%0ABen'));
 });
 
 test('readRowsFromGoogleSheet reads range and maps values', async () => {
