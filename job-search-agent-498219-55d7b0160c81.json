@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "job-search-agent-498219",
+  "private_key_id": "55d7b0160c810068172453f5cb62b99d730fcd51",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDaLn2c5DuXkm91\ndac8ijH8eLGpqhpxuFfQvCWet7P8/gdrgIXMA9L6jYgncqn/oisU54EjY+LCO+XV\nXDsyHRPq2wAlOsJ/sfFOinc8mW3HneizDf1s4eBmDZ1wV8oWcpc5p1q7Keat4pVc\npx07I9ySk6Ci5/xST6a8qsnh7bVpaqyYMeFDckgQiwTJYEaILf+B8g4WAb3E1dHE\nX0q/nXVQJYGzDnTCkz0eWggkp0ATVLX0cHl0YV0v3f7MeVhgnTACgcAqQio5AC59\ny4fhUyulJsSE0ZJHh6Ajw4ai6mHjNtQ3G4ScGli+17JMXgXVd378ghk5jkmmuWa7\n+yTmyfwnAgMBAAECggEAH/GQ6YtkNYUL4DjOuJHhJKjvwLqgxDKXBNQZy/BIdWDP\nPvbiX/mABmKkuGXU1ufBgqjXDZKTwhgD8TuKMoRIWhPLTygYZEVuDNo//+AqJFY4\nb3K7vm50V2y54WyxBUgCCmpitya42To537FbRGvei5qlTlnvEDFiOkWPvjjP3TQq\n3+v9ji7zvB/hHqkVRca/mY1XZOL2Q0/i7yfsU+2+4Pq0byMdw1ticBQkllOWKDvf\n38/AwWSlBy/O6Qc1scmPtxKK4swUmWRGaKrXM4dpsjLJLwWTxmUKgWL7kYOMHVVT\nwBG3u3nsusXJOPYfYiBhkB8bOzzKg+tXtpXl560eSQKBgQD8jducA1lubu/csFg3\nxz+EqbRi7UQxJ1Ds8KKVjY21sdgciyQvZ/w0NPuXnsoVtH7Wbn1s4jSZ2r3Gy9SQ\njI12pzZuC/xWNTLbY5bwL6p7YD9rhVXS4cN8A7+hiDhCIQWKAI7cV4WYKDg5QpzS\nFu/lCX3ryIDjfJYEleRBrAzxOQKBgQDdKJLW4i2wgHmpgi+IWhjVWC6z1mH/OcfN\nDK9nXD2ktuGgrK7O3kZJ3F+gd8Wu2c/js93uFcgUMOl39qmAX+uqc8Qux8EqBfmy\n7g+eEKsNeR38uJnKWJPpHXRJOvd8BF/Dr5bJpf6r1t5ClhidXlquLDfnvnfvU2lj\ncLOn2vg4XwKBgAHcfcjZkXgp4ySqPAw1MLemlIjCHOWL16HXaCtX/rpfFCuprtuW\nlZpA5bXJWs3sJZ8o802xIRgdL5bee7ORBZ3hP5pyBisQe054nm0ovMXqAK2nLum9\n9jXcxTXIjjmWirboqCThlD951Gg/oG4/8waqGj55nNGQYn6oKCV/whypAoGARXSG\nmSGzQ6k1jDysfN/+yJHHKQd9A1C8JPOE6qsXWPFubq2MwL8hx/SDu7uhw8X3+gT0\n/96rVVv/FoPKu9xkAMYWqLJnQbFauAz3rqaBcdvFxSacdeXXnfB4Ir94FeSxxp0Q\neAe/sWvrpXHKDTIivGx6qjcxJ2JEyMwOP/sO1XUCgYBQinx+yXPswi2tRQiP7Vco\n78DAUc0IDmfZi4Qv4CUAlxOICfwWiWJOlYXXHPxPDrFDT9EN19wJmhtYxgzaVRmG\nFAf9B8aLo+5FPq8X02I3u8WkxcbSjAvaPajP6yjArrvvfBr49zd/lVi1F+ZrQzhu\ni+8Nnbon3BOFmiPMyK0QFg==\n-----END PRIVATE KEY-----\n",
+  "client_email": "leads-sheet@job-search-agent-498219.iam.gserviceaccount.com",
+  "client_id": "116676937633422291834",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/leads-sheet%40job-search-agent-498219.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

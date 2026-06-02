@@ -1,0 +1,166 @@
+import fs from 'node:fs/promises';
+import { google } from 'googleapis';
+import { CSV_HEADERS } from './pipeline.js';
+
+export const DEFAULT_GOOGLE_SHEET_ID = '1N4XsyA4IICyEFxlSH-m3uoePU8EMDBywQVauMz9wNQE';
+const DEFAULT_TAB_NAME = 'Sheet1';
+const GOOGLE_SHEETS_SCOPE = ['https://www.googleapis.com/auth/spreadsheets'];
+
+export function extractSpreadsheetId(rawValue) {
+  const value = String(rawValue || '').trim();
+  if (!value) return '';
+
+  if (!value.includes('docs.google.com/spreadsheets')) {
+    return value;
+  }
+
+  const match = value.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  return match?.[1] || '';
+}
+
+export function resolveGoogleSheetsConfig(env = process.env) {
+  const spreadsheetInput = env.GOOGLE_SHEET_ID || env.GOOGLE_SHEETS_SPREADSHEET_ID || env.GOOGLE_SHEET_URL || DEFAULT_GOOGLE_SHEET_ID;
+  const spreadsheetId = extractSpreadsheetId(spreadsheetInput);
+  const tabName = String(env.GOOGLE_SHEET_TAB || env.GOOGLE_SHEETS_TAB_NAME || DEFAULT_TAB_NAME).trim();
+  const serviceAccountEmail = String(env.GOOGLE_SERVICE_ACCOUNT_EMAIL || '').trim();
+  const privateKey = String(env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
+  const serviceAccountKeyFile = String(env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE || '').trim();
+
+  if (!spreadsheetId) {
+    throw new Error('Missing Google Sheets spreadsheet id. Set GOOGLE_SHEET_ID or GOOGLE_SHEET_URL.');
+  }
+
+  if (!tabName) {
+    throw new Error('Missing Google Sheets tab name. Set GOOGLE_SHEET_TAB.');
+  }
+
+  return {
+    spreadsheetId,
+    tabName,
+    serviceAccountEmail,
+    privateKey,
+    serviceAccountKeyFile,
+  };
+}
+
+async function loadServiceAccountCredentials(config) {
+  if (config.serviceAccountKeyFile) {
+    console.log('[sheets] loading credentials from key file', {
+      serviceAccountKeyFile: config.serviceAccountKeyFile,
+    });
+
+    const raw = await fs.readFile(config.serviceAccountKeyFile, 'utf8');
+    const parsed = JSON.parse(raw);
+    const clientEmail = String(parsed.client_email || '').trim();
+    const privateKey = String(parsed.private_key || '');
+
+    if (!clientEmail || !privateKey) {
+      throw new Error('Google service account key file is missing client_email or private_key.');
+    }
+
+    return { clientEmail, privateKey };
+  }
+
+  if (config.serviceAccountEmail && config.privateKey) {
+    console.log('[sheets] using credentials from env vars', {
+      serviceAccountEmail: config.serviceAccountEmail,
+    });
+
+    return {
+      clientEmail: config.serviceAccountEmail,
+      privateKey: config.privateKey,
+    };
+  }
+
+  throw new Error(
+    'Missing Google credentials. Set GOOGLE_SERVICE_ACCOUNT_EMAIL + GOOGLE_PRIVATE_KEY, or GOOGLE_SERVICE_ACCOUNT_KEY_FILE.'
+  );
+}
+
+export async function createSheetsClient(config) {
+  const credentials = await loadServiceAccountCredentials(config);
+
+  const auth = new google.auth.JWT({
+    email: credentials.clientEmail,
+    key: credentials.privateKey,
+    scopes: GOOGLE_SHEETS_SCOPE,
+  });
+
+  return google.sheets({ version: 'v4', auth });
+}
+
+export function toSheetValues(rows) {
+  const lines = [CSV_HEADERS];
+
+  for (const row of rows || []) {
+    lines.push(CSV_HEADERS.map((header) => String(row?.[header] ?? '')));
+  }
+
+  return lines;
+}
+
+export function fromSheetValues(values) {
+  const table = Array.isArray(values) ? values : [];
+  if (table.length <= 1) return [];
+
+  const [headerRow, ...dataRows] = table;
+  const headers = headerRow.map((h) => String(h || '').trim());
+
+  return dataRows
+    .filter((row) => Array.isArray(row) && row.some((cell) => String(cell || '').trim() !== ''))
+    .map((row) => {
+      const out = {};
+      headers.forEach((header, idx) => {
+        if (!header) return;
+        out[header] = String(row[idx] ?? '');
+      });
+      return out;
+    });
+}
+
+export async function readRowsFromGoogleSheet({ sheets, spreadsheetId, tabName }) {
+  console.log('[sheets] reading rows', { spreadsheetId, tabName });
+
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: `${tabName}!A1:N`,
+  });
+
+  const values = response?.data?.values || [];
+  const rows = fromSheetValues(values);
+
+  console.log('[sheets] loaded existing rows', { rows: rows.length });
+  return rows;
+}
+
+export async function writeRowsToGoogleSheet({ sheets, spreadsheetId, tabName, rows }) {
+  console.log('[sheets] writing rows', { spreadsheetId, tabName, rows: rows.length });
+
+  await sheets.spreadsheets.values.clear({
+    spreadsheetId,
+    range: `${tabName}!A:Z`,
+  });
+
+  const values = toSheetValues(rows);
+
+  await sheets.spreadsheets.values.update({
+    spreadsheetId,
+    range: `${tabName}!A1`,
+    valueInputOption: 'RAW',
+    requestBody: { values },
+  });
+
+  console.log('[sheets] write complete', { rowsWritten: rows.length });
+}
+
+export async function createGoogleSheetsStore(env = process.env) {
+  const config = resolveGoogleSheetsConfig(env);
+  const sheets = await createSheetsClient(config);
+
+  return {
+    spreadsheetId: config.spreadsheetId,
+    tabName: config.tabName,
+    readRows: () => readRowsFromGoogleSheet({ sheets, spreadsheetId: config.spreadsheetId, tabName: config.tabName }),
+    writeRows: (rows) => writeRowsToGoogleSheet({ sheets, spreadsheetId: config.spreadsheetId, tabName: config.tabName, rows }),
+  };
+}

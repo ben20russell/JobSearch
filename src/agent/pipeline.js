@@ -15,6 +15,7 @@ const DECISION_KEYWORDS = [
 
 export const CSV_HEADERS = [
   'agency_name',
+  'agency_type',
   'company_domain',
   'employee_count',
   'company_city',
@@ -64,6 +65,7 @@ export function buildLeadRows({ agencies, peopleByAgencyId, today = new Date().t
 
       rows.push({
         agency_name: agency.name || '',
+        agency_type: '',
         company_domain: getDomain(agency.website_url),
         employee_count: employeeCount,
         company_city: agency.city || '',

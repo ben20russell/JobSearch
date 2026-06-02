@@ -2,6 +2,7 @@ import OpenAI, { AzureOpenAI } from 'openai';
 import { z } from 'zod';
 import { zodTextFormat } from 'openai/helpers/zod';
 import { withRetry } from './retry.js';
+import { ALLOWED_AGENCY_TYPES } from './agency-types.js';
 
 const ContactSchema = z.object({
   contact_name: z.string().min(1),
@@ -13,6 +14,7 @@ const ContactSchema = z.object({
 
 const CompanySchema = z.object({
   agency_name: z.string().min(1),
+  agency_type: z.enum(ALLOWED_AGENCY_TYPES),
   company_domain: z.string().min(1),
   employee_count: z.number().int().nonnegative(),
   company_city: z.string().default(''),
@@ -150,9 +152,12 @@ export function normalizeAndValidateAzureEndpoint(rawEndpoint) {
 }
 
 function buildPrompt({ modelNotes }) {
+  const allowedAgencyTypes = ALLOWED_AGENCY_TYPES.join(', ');
   return [
     'You are a lead-research assistant.',
-    'Find U.S.-based marketing agencies with estimated employee counts between 25 and 150.',
+    'Find U.S.-based agencies with estimated employee counts between 25 and 150.',
+    'Only include agency firms in these categories: integrated marketing agencies, creative agencies, PR agencies, brand agencies, and brand strategy agencies.',
+    `Set company.agency_type using one of these exact values: ${allowedAgencyTypes}.`,
     'Return all unique agencies you can find.',
     'For each agency, provide 1-3 decision-makers with hiring authority, prioritizing: Founder, CEO, Owner, President, Managing Director, Chief Strategy Officer, Head/VP/Director of Strategy.',
     'Only include contacts when you are confident the email is valid business email.',

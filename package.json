@@ -8,9 +8,13 @@
     "lint": "node scripts/lint.js",
     "build": "node scripts/build.js",
     "start": "node src/cli/run-agent.js",
+    "sync-sheet": "node src/cli/sync-csv-to-sheet.js",
     "dev": "node scripts/dev-server.js"
   },
   "dependencies": {
+    "google-auth-library": "^10.6.2",
+    "google-spreadsheet": "^5.2.0",
+    "googleapis": "^173.0.0",
     "openai": "^6.33.0",
     "zod": "^3.24.1"
   }

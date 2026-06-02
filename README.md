@@ -1,13 +1,14 @@
 # Job Search Agent
 
-Automated lead agent to find US marketing agencies with 25-150 employees using your Azure OpenAI deployment, then output/update a single spreadsheet CSV.
+Automated lead agent to find US marketing agencies with 25-150 employees using your Azure OpenAI deployment, then output/update a Google Sheet.
 
 ## What it does
 
 - Uses Azure OpenAI to research US marketing agencies (`25-150` employees)
+- Restricts agency types to: integrated marketing, creative, PR, brand, and brand strategy agencies
 - Extracts likely senior decision-makers (Founder, CEO, Owner, President, Managing Director, CSO, Head/VP/Director of Strategy)
 - Keeps only contacts with business email addresses
-- Upserts into `data/agency_leads.csv` so repeated runs refresh the same sheet
+- Upserts into your Google Sheet so repeated runs refresh the same tab
 
 ## Setup
 
@@ -17,7 +18,7 @@ Automated lead agent to find US marketing agencies with 25-150 employees using y
 cp .env.example .env.local
 ```
 
-2. Fill in `.env.local` with your Azure OpenAI values.
+2. Fill in `.env.local` with your Azure OpenAI values plus Google Sheets settings.
 
 `npm run start` now auto-loads `.env.local` (if present), so you do not need to manually export variables each time.
 
@@ -30,6 +31,14 @@ Do not use project-style endpoints like `https://...services.ai.azure.com/api/pr
 Optional control:
 
 - `LEAD_SEARCH_NOTES` (extra prompt instructions)
+- `GOOGLE_SHEET_ID` (URL or plain id; defaults to your shared sheet id)
+- `GOOGLE_SHEET_TAB` (defaults to `Sheet1`)
+- `GOOGLE_SERVICE_ACCOUNT_KEY_FILE` (path to service account JSON file)
+- OR `GOOGLE_SERVICE_ACCOUNT_EMAIL` + `GOOGLE_PRIVATE_KEY`
+
+Important:
+
+- Share the Google Sheet with your service account email as `Editor`.
 
 ## Run
 
@@ -37,9 +46,9 @@ Optional control:
 npm run start
 ```
 
-Output file:
+Output destination:
 
-- `data/agency_leads.csv`
+- Google Sheet tab (default `Sheet1`)
 
 ## Refresh regularly
 

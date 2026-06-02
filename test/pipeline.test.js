@@ -85,6 +85,7 @@ test('toCsv serializes rows with stable headers', () => {
   const rows = [
     {
       agency_name: 'Northstar Marketing',
+      agency_type: 'integrated_marketing_agency',
       company_domain: 'northstar.example',
       employee_count: 48,
       contact_name: 'Casey Lee',
@@ -99,7 +100,8 @@ test('toCsv serializes rows with stable headers', () => {
 
   const csv = toCsv(rows);
 
-  assert.match(csv, /agency_name,company_domain,employee_count/);
+  assert.match(csv, /agency_name,agency_type,company_domain,employee_count/);
   assert.match(csv, /Northstar Marketing/);
+  assert.match(csv, /integrated_marketing_agency/);
   assert.match(csv, /casey@northstar.example/);
 });
