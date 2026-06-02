@@ -1,3 +1,5 @@
+import { inferAgencyType } from './agency-types.js';
+
 const DECISION_KEYWORDS = [
   'chief',
   'ceo',
@@ -65,7 +67,10 @@ export function buildLeadRows({ agencies, peopleByAgencyId, today = new Date().t
 
       rows.push({
         agency_name: agency.name || '',
-        agency_type: '',
+        agency_type: inferAgencyType({
+          agencyName: agency.name,
+          companyDomain: getDomain(agency.website_url),
+        }) || '',
         company_domain: getDomain(agency.website_url),
         employee_count: employeeCount,
         company_city: agency.city || '',

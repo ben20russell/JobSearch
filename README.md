@@ -35,10 +35,14 @@ Optional control:
 - `GOOGLE_SHEET_TAB` (defaults to `Sheet1`)
 - `GOOGLE_SERVICE_ACCOUNT_KEY_FILE` (path to service account JSON file)
 - OR `GOOGLE_SERVICE_ACCOUNT_EMAIL` + `GOOGLE_PRIVATE_KEY`
+- `EXCLUDED_AGENCIES_PATH` (optional CSV of agencies/domains to always exclude; defaults to `data/provided_agencies.csv`)
 
 Important:
 
 - Share the Google Sheet with your service account email as `Editor`.
+- Keep credentials private:
+  - Use a local key file such as `service-account.local.json` and set `GOOGLE_SERVICE_ACCOUNT_KEY_FILE` to that path.
+  - Never commit `.env.local` or service account key files.
 
 ## Run
 
@@ -49,6 +53,22 @@ npm run start
 Output destination:
 
 - Google Sheet tab (default `Sheet1`)
+
+## Always-excluded agencies
+
+Maintain your always-excluded list in:
+
+- `data/provided_agencies.csv`
+
+Supported columns:
+
+- `company_domain`
+- `agency_name`
+
+Any matching domain or agency name will be removed automatically during both:
+
+- `npm run sync-sheet`
+- `npm run start`
 
 ## Refresh regularly
 

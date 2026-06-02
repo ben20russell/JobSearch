@@ -2,6 +2,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { AzureOpenAILeadClient } from '../agent/azure-openai-lead-client.js';
 import { mapModelLeadsToRows } from '../agent/azure-leads.js';
+import { applyAgencyExclusions, loadAgencyExclusions } from '../agent/exclusions.js';
 import { createGoogleSheetsStore } from '../agent/google-sheets.js';
 import { mergeRowsByKey } from '../agent/pipeline.js';
 import { loadEnvLocalFile } from './env-loader.js';
@@ -24,6 +25,14 @@ async function run() {
   });
 
   const modelNotes = process.env.LEAD_SEARCH_NOTES || '';
+  const exclusionPath = process.env.EXCLUDED_AGENCIES_PATH || path.join(projectRoot, 'data', 'provided_agencies.csv');
+  const exclusions = await loadAgencyExclusions(exclusionPath);
+  console.log('[agent] loaded exclusions', {
+    exclusionPath,
+    excludedDomains: exclusions.domains.size,
+    excludedNames: exclusions.names.size,
+  });
+
   const sheetsStore = await createGoogleSheetsStore(process.env);
   console.log('[agent] using google sheet destination', {
     spreadsheetId: sheetsStore.spreadsheetId,
@@ -41,12 +50,14 @@ async function run() {
   const existingRows = await sheetsStore.readRows();
 
   const merged = mergeRowsByKey(existingRows, incomingRows);
-  await sheetsStore.writeRows(merged);
+  const { filteredRows, removedCount } = applyAgencyExclusions(merged, exclusions);
+  await sheetsStore.writeRows(filteredRows);
 
   console.log('[agent] pipeline complete', {
     spreadsheetId: sheetsStore.spreadsheetId,
     tabName: sheetsStore.tabName,
-    totalRows: merged.length,
+    totalRows: filteredRows.length,
+    removedByExclusionList: removedCount,
     addedOrUpdated: incomingRows.length,
   });
 }

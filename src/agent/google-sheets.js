@@ -5,6 +5,35 @@ import { CSV_HEADERS } from './pipeline.js';
 export const DEFAULT_GOOGLE_SHEET_ID = '1N4XsyA4IICyEFxlSH-m3uoePU8EMDBywQVauMz9wNQE';
 const DEFAULT_TAB_NAME = 'Sheet1';
 const GOOGLE_SHEETS_SCOPE = ['https://www.googleapis.com/auth/spreadsheets'];
+const CONTACT_EMAIL_HEADER = 'contact_email';
+
+function escapeFormulaLiteral(value) {
+  return String(value || '').replaceAll('"', '""');
+}
+
+function extractEmailAddress(rawValue) {
+  const value = String(rawValue || '').trim();
+  if (!value) return '';
+
+  const plainEmailMatch = value.match(/([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})/i);
+  if (plainEmailMatch?.[1]) return plainEmailMatch[1].toLowerCase();
+
+  const mailToMatch = value.match(/to=([^\s"&,)]+)/i);
+  if (mailToMatch?.[1]) return decodeURIComponent(mailToMatch[1]).toLowerCase();
+
+  const quotedEmailMatch = value.match(/"([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})"/i);
+  if (quotedEmailMatch?.[1]) return quotedEmailMatch[1].toLowerCase();
+
+  return '';
+}
+
+export function toGmailComposeHyperlink(email) {
+  const normalizedEmail = extractEmailAddress(email);
+  if (!normalizedEmail) return '';
+
+  const escapedEmail = escapeFormulaLiteral(normalizedEmail);
+  return `=HYPERLINK("https://mail.google.com/mail/?view=cm&fs=1&to=${escapedEmail}","${escapedEmail}")`;
+}
 
 export function extractSpreadsheetId(rawValue) {
   const value = String(rawValue || '').trim();
@@ -93,7 +122,14 @@ export function toSheetValues(rows) {
   const lines = [CSV_HEADERS];
 
   for (const row of rows || []) {
-    lines.push(CSV_HEADERS.map((header) => String(row?.[header] ?? '')));
+    lines.push(
+      CSV_HEADERS.map((header) => {
+        if (header === CONTACT_EMAIL_HEADER) {
+          return toGmailComposeHyperlink(row?.[header]);
+        }
+        return String(row?.[header] ?? '');
+      })
+    );
   }
 
   return lines;
@@ -146,7 +182,7 @@ export async function writeRowsToGoogleSheet({ sheets, spreadsheetId, tabName, r
   await sheets.spreadsheets.values.update({
     spreadsheetId,
     range: `${tabName}!A1`,
-    valueInputOption: 'RAW',
+    valueInputOption: 'USER_ENTERED',
     requestBody: { values },
   });
 

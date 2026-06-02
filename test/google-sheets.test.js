@@ -5,6 +5,7 @@ import {
   extractSpreadsheetId,
   fromSheetValues,
   readRowsFromGoogleSheet,
+  toGmailComposeHyperlink,
   toSheetValues,
   writeRowsToGoogleSheet,
 } from '../src/agent/google-sheets.js';
@@ -38,11 +39,27 @@ test('toSheetValues and fromSheetValues round-trip rows', () => {
   const values = toSheetValues(SAMPLE_ROWS);
   assert.equal(values.length, 2);
   assert.equal(values[1][0], 'Northstar Marketing');
+  assert.equal(
+    values[1][9],
+    '=HYPERLINK("https://mail.google.com/mail/?view=cm&fs=1&to=casey@northstar.example","casey@northstar.example")'
+  );
 
   const roundTrip = fromSheetValues(values);
   assert.equal(roundTrip.length, 1);
   assert.equal(roundTrip[0].company_domain, 'northstar.example');
-  assert.equal(roundTrip[0].contact_email, 'casey@northstar.example');
+  assert.equal(
+    roundTrip[0].contact_email,
+    '=HYPERLINK("https://mail.google.com/mail/?view=cm&fs=1&to=casey@northstar.example","casey@northstar.example")'
+  );
+});
+
+test('toGmailComposeHyperlink normalizes nested formula input', () => {
+  const nested = '=HYPERLINK("https://mail.google.com/mail/?view=cm&fs=1&to==HYPERLINK(""https://mail.google.com/mail/?view=cm&fs=1&to=casey@northstar.example"",""casey@northstar.example"")","=HYPERLINK(""https://mail.google.com/mail/?view=cm&fs=1&to=casey@northstar.example"",""casey@northstar.example"")")';
+  const formula = toGmailComposeHyperlink(nested);
+  assert.equal(
+    formula,
+    '=HYPERLINK("https://mail.google.com/mail/?view=cm&fs=1&to=casey@northstar.example","casey@northstar.example")'
+  );
 });
 
 test('readRowsFromGoogleSheet reads range and maps values', async () => {
@@ -88,5 +105,6 @@ test('writeRowsToGoogleSheet clears then writes values', async () => {
   assert.equal(calls[0].args.range, 'Sheet1!A:Z');
   assert.equal(calls[1].type, 'update');
   assert.equal(calls[1].args.range, 'Sheet1!A1');
+  assert.equal(calls[1].args.valueInputOption, 'USER_ENTERED');
   assert.equal(calls[1].args.requestBody.values.length, 2);
 });

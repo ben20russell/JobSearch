@@ -1,2 +1,18 @@
 
+node_modules/
+
+# Local/private env and secret files
+.env
 .env.local
+.env.*
+!.env.example
+
+# Common credential formats
+*.pem
+*.p12
+*.pfx
+*.key
+
+# Service account key files (keep local, never commit)
+job-search-agent-*-*.json
+service-account.local.json

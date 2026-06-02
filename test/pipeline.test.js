@@ -45,6 +45,7 @@ test('buildLeadRows keeps target agency size and decision makers', () => {
 
   assert.equal(rows.length, 1);
   assert.equal(rows[0].agency_name, 'Northstar Marketing');
+  assert.equal(rows[0].agency_type, 'integrated_marketing_agency');
   assert.equal(rows[0].employee_count, 48);
   assert.equal(rows[0].contact_name, 'Casey Lee');
   assert.equal(rows[0].contact_title, 'Founder & CEO');

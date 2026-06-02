@@ -1,4 +1,4 @@
-import { normalizeAgencyType } from './agency-types.js';
+import { inferAgencyType, normalizeAgencyType } from './agency-types.js';
 
 const DECISION_KEYWORDS = [
   'chief',
@@ -32,7 +32,15 @@ export function mapModelLeadsToRows(candidates, { today = new Date().toISOString
   for (const company of candidates || []) {
     const employeeCount = Number(company?.employee_count || 0);
     if (!inTargetSize(employeeCount)) continue;
-    const agencyType = normalizeAgencyType(company?.agency_type);
+    const rawAgencyType = String(company?.agency_type || '').trim();
+    const normalizedAgencyType = normalizeAgencyType(rawAgencyType);
+    if (rawAgencyType && !normalizedAgencyType) continue;
+
+    const agencyType = inferAgencyType({
+      agencyType: normalizedAgencyType,
+      agencyName: company?.agency_name,
+      companyDomain: company?.company_domain,
+    });
     if (!agencyType) continue;
 
     for (const contact of company?.contacts || []) {
