@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { validateRowsEmailAccuracy } from '../agent/email-checks.js';
 import { applyAgencyExclusions, loadAgencyExclusions } from '../agent/exclusions.js';
 import { createGoogleSheetsStore } from '../agent/google-sheets.js';
 import { fromCsv, mergeRowsByKey } from '../agent/pipeline.js';
@@ -40,6 +41,15 @@ export async function run() {
     exclusions,
   });
 
+  const emailValidation = await validateRowsEmailAccuracy(filteredRows, {
+    requireSmtp: parseBooleanEnv(process.env.EMAIL_REQUIRE_SMTP, true),
+    timeoutMs: parsePositiveIntEnv(process.env.EMAIL_SMTP_TIMEOUT_MS, 7000),
+    maxMxHosts: parsePositiveIntEnv(process.env.EMAIL_MAX_MX_HOSTS, 3),
+    heloHost: String(process.env.EMAIL_SMTP_HELO_HOST || 'localhost'),
+    mailFrom: String(process.env.EMAIL_SMTP_MAIL_FROM || 'verify@localhost'),
+  });
+  const validatedRows = mergeRowsByKey([], emailValidation.validRows);
+
   console.log('[sync] parsed csv rows', { rows: rows.length });
   console.log('[sync] loaded existing sheet rows', { existingRows: existingRows.length });
   console.log('[sync] merged rows by key', { mergedRows: mergedRows.length });
@@ -48,14 +58,44 @@ export async function run() {
     removedByExclusionList: removedCount,
     rowsAfterFilter: filteredRows.length,
   });
+  console.log('[sync] email checks complete', {
+    rowsBeforeEmailChecks: filteredRows.length,
+    rowsAfterEmailChecks: validatedRows.length,
+    rejectedRows: emailValidation.rejectedRows.length,
+    failuresByReason: emailValidation.summary.failuresByReason,
+  });
+  if (emailValidation.rejectedRows.length > 0) {
+    console.log('[sync] rejected rows sample', {
+      sample: emailValidation.rejectedRows.slice(0, 5).map((item) => ({
+        agency_name: item?.row?.agency_name || '',
+        contact_name: item?.row?.contact_name || '',
+        contact_email: item?.row?.contact_email || '',
+        reason: item?.reason || '',
+      })),
+    });
+  }
 
-  await sheetsStore.writeRows(filteredRows);
+  await sheetsStore.writeRows(validatedRows);
 
   console.log('[sync] complete', {
     spreadsheetId: sheetsStore.spreadsheetId,
     tabName: sheetsStore.tabName,
-    rowsSynced: filteredRows.length,
+    rowsSynced: validatedRows.length,
   });
+}
+
+function parseBooleanEnv(value, defaultValue) {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (!normalized) return defaultValue;
+  if (['1', 'true', 'yes', 'y', 'on'].includes(normalized)) return true;
+  if (['0', 'false', 'no', 'n', 'off'].includes(normalized)) return false;
+  return defaultValue;
+}
+
+function parsePositiveIntEnv(value, defaultValue) {
+  const parsed = Number.parseInt(String(value || ''), 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) return defaultValue;
+  return parsed;
 }
 
 const isDirectExecution = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;

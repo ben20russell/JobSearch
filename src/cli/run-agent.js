@@ -2,6 +2,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { AzureOpenAILeadClient } from '../agent/azure-openai-lead-client.js';
 import { mapModelLeadsToRows } from '../agent/azure-leads.js';
+import { validateRowsEmailAccuracy } from '../agent/email-checks.js';
 import { applyAgencyExclusions, loadAgencyExclusions } from '../agent/exclusions.js';
 import { createGoogleSheetsStore } from '../agent/google-sheets.js';
 import { mergeRowsByKey } from '../agent/pipeline.js';
@@ -47,9 +48,34 @@ async function run() {
     incomingRows: incomingRows.length,
   });
 
+  const emailValidation = await validateRowsEmailAccuracy(incomingRows, {
+    requireSmtp: parseBooleanEnv(process.env.EMAIL_REQUIRE_SMTP, true),
+    timeoutMs: parsePositiveIntEnv(process.env.EMAIL_SMTP_TIMEOUT_MS, 7000),
+    maxMxHosts: parsePositiveIntEnv(process.env.EMAIL_MAX_MX_HOSTS, 3),
+    heloHost: String(process.env.EMAIL_SMTP_HELO_HOST || 'localhost'),
+    mailFrom: String(process.env.EMAIL_SMTP_MAIL_FROM || 'verify@localhost'),
+  });
+  const validatedIncomingRows = emailValidation.validRows;
+  console.log('[agent] email checks complete', {
+    incomingRows: incomingRows.length,
+    validatedIncomingRows: validatedIncomingRows.length,
+    rejectedRows: emailValidation.rejectedRows.length,
+    failuresByReason: emailValidation.summary.failuresByReason,
+  });
+  if (emailValidation.rejectedRows.length > 0) {
+    console.log('[agent] rejected rows sample', {
+      sample: emailValidation.rejectedRows.slice(0, 5).map((item) => ({
+        agency_name: item?.row?.agency_name || '',
+        contact_name: item?.row?.contact_name || '',
+        contact_email: item?.row?.contact_email || '',
+        reason: item?.reason || '',
+      })),
+    });
+  }
+
   const existingRows = await sheetsStore.readRows();
 
-  const merged = mergeRowsByKey(existingRows, incomingRows);
+  const merged = mergeRowsByKey(existingRows, validatedIncomingRows);
   const { filteredRows, removedCount } = applyAgencyExclusions(merged, exclusions);
   await sheetsStore.writeRows(filteredRows);
 
@@ -58,8 +84,22 @@ async function run() {
     tabName: sheetsStore.tabName,
     totalRows: filteredRows.length,
     removedByExclusionList: removedCount,
-    addedOrUpdated: incomingRows.length,
+    addedOrUpdated: validatedIncomingRows.length,
   });
+}
+
+function parseBooleanEnv(value, defaultValue) {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (!normalized) return defaultValue;
+  if (['1', 'true', 'yes', 'y', 'on'].includes(normalized)) return true;
+  if (['0', 'false', 'no', 'n', 'off'].includes(normalized)) return false;
+  return defaultValue;
+}
+
+function parsePositiveIntEnv(value, defaultValue) {
+  const parsed = Number.parseInt(String(value || ''), 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) return defaultValue;
+  return parsed;
 }
 
 run().catch((error) => {

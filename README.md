@@ -36,6 +36,11 @@ Optional control:
 - `GOOGLE_SERVICE_ACCOUNT_KEY_FILE` (path to service account JSON file)
 - OR `GOOGLE_SERVICE_ACCOUNT_EMAIL` + `GOOGLE_PRIVATE_KEY`
 - `EXCLUDED_AGENCIES_PATH` (optional CSV of agencies/domains to always exclude; defaults to `data/provided_agencies.csv`)
+- `EMAIL_REQUIRE_SMTP` (`true` by default; when `true`, each email must pass format + person/company match + MX+SMTP mailbox check)
+- `EMAIL_SMTP_TIMEOUT_MS` (default `7000`)
+- `EMAIL_MAX_MX_HOSTS` (default `3`)
+- `EMAIL_SMTP_HELO_HOST` (default `localhost`)
+- `EMAIL_SMTP_MAIL_FROM` (default `verify@localhost`)
 
 Important:
 
