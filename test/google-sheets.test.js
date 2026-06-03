@@ -56,6 +56,8 @@ test('toSheetValues and fromSheetValues round-trip rows', () => {
   assert.equal(compose.label, 'casey@northstar.example');
   assert.ok(compose.url.includes('to=casey%40northstar.example'));
   assert.ok(compose.url.includes('su=Intro%20%2B%20Strategy%20Convo'));
+  assert.ok(compose.url.includes('tf=cm'));
+  assert.ok(compose.url.includes('%27'));
   assert.ok(body.includes('Hi Casey,'));
   assert.ok(body.includes("I've been following the strategy work coming out of Northstar Marketing"));
   assert.ok(body.includes("For the last 16 years I've been building brands, executing campaigns and growing agencies."));

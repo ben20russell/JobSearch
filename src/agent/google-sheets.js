@@ -18,6 +18,12 @@ function escapeFormulaLiteral(value) {
   return String(value || '').replaceAll('"', '""');
 }
 
+function encodeGmailParam(value) {
+  return encodeURIComponent(String(value || '')).replace(/[!'()*]/g, (char) =>
+    `%${char.charCodeAt(0).toString(16).toUpperCase()}`
+  );
+}
+
 function extractEmailAddress(rawValue) {
   const value = String(rawValue || '').trim();
   if (!value) return '';
@@ -38,11 +44,11 @@ export function toGmailComposeHyperlink(email, { firstName = 'there', agencyName
   const normalizedEmail = extractEmailAddress(email);
   if (!normalizedEmail) return '';
 
-  const encodedEmail = encodeURIComponent(normalizedEmail);
-  const encodedSubject = encodeURIComponent(EMAIL_SUBJECT);
-  const encodedBody = encodeURIComponent(buildIntroEmailBody({ firstName, agencyName }));
+  const encodedEmail = encodeGmailParam(normalizedEmail);
+  const encodedSubject = encodeGmailParam(EMAIL_SUBJECT);
+  const encodedBody = encodeGmailParam(buildIntroEmailBody({ firstName, agencyName }));
   const escapedLabel = escapeFormulaLiteral(normalizedEmail);
-  const composeUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodedEmail}&su=${encodedSubject}&body=${encodedBody}`;
+  const composeUrl = `https://mail.google.com/mail/?view=cm&fs=1&tf=cm&to=${encodedEmail}&su=${encodedSubject}&body=${encodedBody}`;
 
   return `=HYPERLINK("${composeUrl}","${escapedLabel}")`;
 }
