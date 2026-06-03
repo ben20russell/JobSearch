@@ -1,4 +1,5 @@
 import { inferAgencyType, resolveClientDeliverble } from './agency-types.js';
+import { resolveDepartment } from './department.js';
 
 const DECISION_KEYWORDS = [
   'chief',
@@ -25,7 +26,7 @@ export const CSV_HEADERS = [
   'company_state',
   'contact_name',
   'contact_title',
-  'contact_seniority',
+  'Department',
   'contact_email',
   'linkedin_url',
   'source',
@@ -82,7 +83,7 @@ export function buildLeadRows({ agencies, peopleByAgencyId, today = new Date().t
         company_state: agency.state || '',
         contact_name: person.full_name || '',
         contact_title: person.title || '',
-        contact_seniority: person.seniority || '',
+        Department: resolveDepartment({ contactTitle: person.title }),
         contact_email: String(person.email || '').toLowerCase(),
         linkedin_url: person.linkedin_url || '',
         source: person.source || 'apollo',
@@ -127,6 +128,13 @@ function getHeaderValue(row, header) {
     return resolveClientDeliverble({
       clientDeliverble: row?.[header],
       agencyType: row?.agency_type,
+    });
+  }
+
+  if (header === 'Department') {
+    return resolveDepartment({
+      department: row?.[header],
+      contactTitle: row?.contact_title,
     });
   }
 

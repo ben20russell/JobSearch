@@ -1,9 +1,9 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { applyAgencyExclusions, loadAgencyExclusions } from '../agent/exclusions.js';
 import { createGoogleSheetsStore } from '../agent/google-sheets.js';
-import { fromCsv } from '../agent/pipeline.js';
+import { fromCsv, mergeRowsByKey } from '../agent/pipeline.js';
 import { loadEnvLocalFile } from './env-loader.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -11,7 +11,14 @@ const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '../..');
 const defaultCsvPath = path.join(projectRoot, 'data', 'agency_leads.csv');
 
-async function run() {
+export function buildRowsForSync({ existingRows, csvRows, exclusions }) {
+  const mergedRows = mergeRowsByKey(existingRows || [], csvRows || []);
+  const { filteredRows, removedCount } = applyAgencyExclusions(mergedRows, exclusions);
+
+  return { mergedRows, filteredRows, removedCount };
+}
+
+export async function run() {
   console.log('[sync] starting csv -> google sheet sync');
 
   const envFilePath = path.join(projectRoot, '.env.local');
@@ -26,9 +33,16 @@ async function run() {
   const rows = fromCsv(csv);
   const exclusionPath = process.env.EXCLUDED_AGENCIES_PATH || path.join(projectRoot, 'data', 'provided_agencies.csv');
   const exclusions = await loadAgencyExclusions(exclusionPath);
-  const { filteredRows, removedCount } = applyAgencyExclusions(rows, exclusions);
+  const existingRows = await sheetsStore.readRows();
+  const { mergedRows, filteredRows, removedCount } = buildRowsForSync({
+    existingRows,
+    csvRows: rows,
+    exclusions,
+  });
 
   console.log('[sync] parsed csv rows', { rows: rows.length });
+  console.log('[sync] loaded existing sheet rows', { existingRows: existingRows.length });
+  console.log('[sync] merged rows by key', { mergedRows: mergedRows.length });
   console.log('[sync] exclusion filter applied', {
     exclusionPath,
     removedByExclusionList: removedCount,
@@ -44,7 +58,11 @@ async function run() {
   });
 }
 
-run().catch((error) => {
-  console.error('[sync] failed', error);
-  process.exitCode = 1;
-});
+const isDirectExecution = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (isDirectExecution) {
+  run().catch((error) => {
+    console.error('[sync] failed', error);
+    process.exitCode = 1;
+  });
+}

@@ -1,4 +1,5 @@
 import { inferAgencyType, normalizeAgencyType, resolveClientDeliverble } from './agency-types.js';
+import { resolveDepartment } from './department.js';
 
 const DECISION_KEYWORDS = [
   'chief',
@@ -57,7 +58,7 @@ export function mapModelLeadsToRows(candidates, { today = new Date().toISOString
         company_state: company?.company_state || '',
         contact_name: contact?.contact_name || '',
         contact_title: contact?.contact_title || '',
-        contact_seniority: contact?.contact_seniority || '',
+        Department: resolveDepartment({ contactTitle: contact?.contact_title }),
         contact_email: String(contact?.contact_email || '').toLowerCase(),
         linkedin_url: contact?.linkedin_url || '',
         source: 'azure-openai-model',

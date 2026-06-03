@@ -37,19 +37,29 @@ const people = {
       email: 'jordan@northstar.example',
       linkedin_url: 'https://linkedin.com/in/jordan',
     },
+    {
+      full_name: 'Morgan Diaz',
+      title: 'Head of Strategy',
+      seniority: 'director',
+      email: 'morgan@northstar.example',
+      linkedin_url: 'https://linkedin.com/in/morgandiaz',
+    },
   ],
 };
 
 test('buildLeadRows keeps target agency size and decision makers', () => {
   const rows = buildLeadRows({ agencies, peopleByAgencyId: people });
 
-  assert.equal(rows.length, 1);
+  assert.equal(rows.length, 2);
   assert.equal(rows[0].agency_name, 'Northstar Marketing');
   assert.equal(rows[0].agency_type, 'integrated_marketing_agency');
   assert.equal(rows[0]['client deliverble'], 'Integrated strategy plus multi-channel campaign execution.');
   assert.equal(rows[0].employee_count, 48);
   assert.equal(rows[0].contact_name, 'Casey Lee');
+  assert.equal(rows[0].Department, 'Executive');
   assert.equal(rows[0].contact_title, 'Founder & CEO');
+  assert.equal(rows[1].contact_name, 'Morgan Diaz');
+  assert.equal(rows[1].Department, 'Strategy');
 });
 
 test('mergeRowsByKey upserts existing rows by agency + email', () => {
@@ -92,6 +102,7 @@ test('toCsv serializes rows with stable headers', () => {
       employee_count: 48,
       contact_name: 'Casey Lee',
       contact_title: 'Founder & CEO',
+      Department: 'Executive',
       contact_email: 'casey@northstar.example',
       linkedin_url: 'https://linkedin.com/in/casey',
       source: 'apollo',
@@ -106,5 +117,6 @@ test('toCsv serializes rows with stable headers', () => {
   assert.match(csv, /Northstar Marketing/);
   assert.match(csv, /integrated_marketing_agency/);
   assert.match(csv, /Integrated strategy plus multi-channel campaign execution\./);
+  assert.match(csv, /Executive/);
   assert.match(csv, /casey@northstar.example/);
 });

@@ -20,7 +20,7 @@ const SAMPLE_ROWS = [
     company_state: 'TX',
     contact_name: 'Casey Lee',
     contact_title: 'Founder & CEO',
-    contact_seniority: 'founder',
+    Department: 'Executive',
     contact_email: 'casey@northstar.example',
     linkedin_url: 'https://linkedin.com/in/casey',
     source: 'apollo',

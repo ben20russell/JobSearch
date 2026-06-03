@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import { google } from 'googleapis';
 import { CSV_HEADERS } from './pipeline.js';
 import { resolveClientDeliverble } from './agency-types.js';
+import { resolveDepartment } from './department.js';
 
 export const DEFAULT_GOOGLE_SHEET_ID = '1N4XsyA4IICyEFxlSH-m3uoePU8EMDBywQVauMz9wNQE';
 const DEFAULT_TAB_NAME = 'Sheet1';
@@ -10,6 +11,7 @@ const CONTACT_EMAIL_HEADER = 'contact_email';
 const CONTACT_NAME_HEADER = 'contact_name';
 const AGENCY_NAME_HEADER = 'agency_name';
 const CLIENT_DELIVERBLE_HEADER = 'client deliverble';
+const DEPARTMENT_HEADER = 'Department';
 const EMAIL_SUBJECT = 'Intro + Strategy Convo';
 
 function escapeFormulaLiteral(value) {
@@ -188,6 +190,13 @@ export function toSheetValues(rows) {
           return resolveClientDeliverble({
             clientDeliverble: row?.[header],
             agencyType: row?.agency_type,
+          });
+        }
+
+        if (header === DEPARTMENT_HEADER) {
+          return resolveDepartment({
+            department: row?.[header],
+            contactTitle: row?.contact_title,
           });
         }
 
