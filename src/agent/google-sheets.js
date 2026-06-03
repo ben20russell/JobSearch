@@ -60,16 +60,14 @@ function buildIntroEmailBody({ firstName = 'there', agencyName = 'your agency' }
   return [
     `Hi ${firstName},`,
     '',
-    `I wanted to introduce myself and start a conversation with you about strategy opportunities at ${agencyName}.`,
+    `I've been following the strategy work coming out of ${agencyName} and wanted to start a conversation with you as I explore my next career move.`,
     '',
-    'I built Brand Atlas to help teams turn complex brand and marketing inputs into clear direction.',
-    'Brand Atlas: https://brandatlas.vercel.app/',
+    "A little bit about me. For the last 16 years I've been building brands, executing campaigns and growing agencies. Most recently, I've been doing this with AI brands. I even built my own AI model to generate more structured, precise and faster audience research.",
     '',
-    'Relevant work:',
-    'https://drive.google.com/file/d/1AP0uSJ3UvYVavdH36699jTabP5AH5OAW/view',
-    'https://benrussell.myportfolio.com/',
+    "Can we set up time to get to know each other better? I'd love to understand your strategy needs.",
     '',
-    'Excited to hear your thoughts!',
+    'Excited to hear your thoughts and connect!',
+    'Ben',
     '',
   ].join('\n');
 }

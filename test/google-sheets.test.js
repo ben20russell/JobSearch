@@ -35,6 +35,11 @@ function extractComposeUrl(formula) {
   return { url: match[1], label: match[2] };
 }
 
+function extractComposeBody(composeUrl) {
+  const parsed = new URL(composeUrl);
+  return String(parsed.searchParams.get('body') || '');
+}
+
 test('extractSpreadsheetId handles Google Sheets URL and raw id', () => {
   const idFromUrl = extractSpreadsheetId('https://docs.google.com/spreadsheets/d/1N4XsyA4IICyEFxlSH-m3uoePU8EMDBywQVauMz9wNQE/edit?usp=sharing');
   assert.equal(idFromUrl, DEFAULT_GOOGLE_SHEET_ID);
@@ -47,16 +52,18 @@ test('toSheetValues and fromSheetValues round-trip rows', () => {
   assert.equal(values[1][0], 'Northstar Marketing');
   assert.equal(values[1][2], 'Integrated strategy plus multi-channel campaign execution.');
   const compose = extractComposeUrl(values[1][10]);
+  const body = extractComposeBody(compose.url);
   assert.equal(compose.label, 'casey@northstar.example');
   assert.ok(compose.url.includes('to=casey%40northstar.example'));
   assert.ok(compose.url.includes('su=Intro%20%2B%20Strategy%20Convo'));
-  assert.ok(compose.url.includes('body=Hi%20Casey'));
-  assert.ok(compose.url.includes('strategy%20opportunities%20at%20Northstar%20Marketing'));
-  assert.ok(compose.url.includes('Brand%20Atlas'));
-  assert.ok(compose.url.includes('https%3A%2F%2Fbrandatlas.vercel.app%2F'));
-  assert.ok(compose.url.includes('https%3A%2F%2Fdrive.google.com%2Ffile%2Fd%2F1AP0uSJ3UvYVavdH36699jTabP5AH5OAW%2Fview'));
-  assert.ok(compose.url.includes('https%3A%2F%2Fbenrussell.myportfolio.com%2F'));
-  assert.ok(!compose.url.includes('%0ABen'));
+  assert.ok(body.includes('Hi Casey,'));
+  assert.ok(body.includes("I've been following the strategy work coming out of Northstar Marketing"));
+  assert.ok(body.includes("For the last 16 years I've been building brands, executing campaigns and growing agencies."));
+  assert.ok(body.includes("I even built my own AI model to generate more structured, precise and faster audience research."));
+  assert.ok(body.includes("I'd love to understand your strategy needs."));
+  assert.ok(body.includes('Excited to hear your thoughts and connect!'));
+  assert.ok(body.includes('\nBen'));
+  assert.ok(body.endsWith('Ben\n'));
 
   const roundTrip = fromSheetValues(values);
   assert.equal(roundTrip.length, 1);
@@ -68,22 +75,22 @@ test('toGmailComposeHyperlink normalizes nested formula input', () => {
   const nested = '=HYPERLINK("https://mail.google.com/mail/?view=cm&fs=1&to==HYPERLINK(""https://mail.google.com/mail/?view=cm&fs=1&to=casey@northstar.example"",""casey@northstar.example"")","=HYPERLINK(""https://mail.google.com/mail/?view=cm&fs=1&to=casey@northstar.example"",""casey@northstar.example"")")';
   const formula = toGmailComposeHyperlink(nested);
   const compose = extractComposeUrl(formula);
+  const body = extractComposeBody(compose.url);
   assert.equal(compose.label, 'casey@northstar.example');
   assert.ok(compose.url.includes('to=casey%40northstar.example'));
-  assert.ok(compose.url.includes('body=Hi%20there'));
+  assert.ok(body.includes('Hi there,'));
 });
 
 test('toGmailComposeHyperlink falls back to defaults when name and agency are missing', () => {
   const formula = toGmailComposeHyperlink('casey@northstar.example');
   const compose = extractComposeUrl(formula);
+  const body = extractComposeBody(compose.url);
   assert.equal(compose.label, 'casey@northstar.example');
   assert.ok(compose.url.includes('su=Intro%20%2B%20Strategy%20Convo'));
-  assert.ok(compose.url.includes('body=Hi%20there'));
-  assert.ok(compose.url.includes('your%20agency'));
-  assert.ok(compose.url.includes('https%3A%2F%2Fbrandatlas.vercel.app%2F'));
-  assert.ok(compose.url.includes('https%3A%2F%2Fdrive.google.com%2Ffile%2Fd%2F1AP0uSJ3UvYVavdH36699jTabP5AH5OAW%2Fview'));
-  assert.ok(compose.url.includes('https%3A%2F%2Fbenrussell.myportfolio.com%2F'));
-  assert.ok(!compose.url.includes('%0ABen'));
+  assert.ok(body.includes('Hi there,'));
+  assert.ok(body.includes('coming out of your agency'));
+  assert.ok(body.includes('Excited to hear your thoughts and connect!'));
+  assert.ok(body.endsWith('Ben\n'));
 });
 
 test('readRowsFromGoogleSheet reads range and maps values', async () => {
