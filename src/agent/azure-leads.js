@@ -1,4 +1,4 @@
-import { inferAgencyType, normalizeAgencyType } from './agency-types.js';
+import { inferAgencyType, normalizeAgencyType, resolveClientDeliverble } from './agency-types.js';
 
 const DECISION_KEYWORDS = [
   'chief',
@@ -50,6 +50,7 @@ export function mapModelLeadsToRows(candidates, { today = new Date().toISOString
       rows.push({
         agency_name: company?.agency_name || '',
         agency_type: agencyType,
+        'client deliverble': resolveClientDeliverble({ agencyType }),
         company_domain: String(company?.company_domain || '').toLowerCase(),
         employee_count: employeeCount,
         company_city: company?.company_city || '',

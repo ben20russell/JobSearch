@@ -45,7 +45,8 @@ test('toSheetValues and fromSheetValues round-trip rows', () => {
   const values = toSheetValues(SAMPLE_ROWS);
   assert.equal(values.length, 2);
   assert.equal(values[1][0], 'Northstar Marketing');
-  const compose = extractComposeUrl(values[1][9]);
+  assert.equal(values[1][2], 'Integrated strategy plus multi-channel campaign execution.');
+  const compose = extractComposeUrl(values[1][10]);
   assert.equal(compose.label, 'casey@northstar.example');
   assert.ok(compose.url.includes('to=casey%40northstar.example'));
   assert.ok(compose.url.includes('su=Intro%20%2B%20Strategy%20Convo'));
@@ -60,7 +61,7 @@ test('toSheetValues and fromSheetValues round-trip rows', () => {
   const roundTrip = fromSheetValues(values);
   assert.equal(roundTrip.length, 1);
   assert.equal(roundTrip[0].company_domain, 'northstar.example');
-  assert.equal(roundTrip[0].contact_email, values[1][9]);
+  assert.equal(roundTrip[0].contact_email, values[1][10]);
 });
 
 test('toGmailComposeHyperlink normalizes nested formula input', () => {
@@ -101,7 +102,7 @@ test('readRowsFromGoogleSheet reads range and maps values', async () => {
   const rows = await readRowsFromGoogleSheet({ sheets, spreadsheetId: DEFAULT_GOOGLE_SHEET_ID, tabName: 'Sheet1' });
 
   assert.equal(calls.length, 1);
-  assert.equal(calls[0].range, 'Sheet1!A1:N');
+  assert.equal(calls[0].range, 'Sheet1!A1:O');
   assert.equal(rows.length, 1);
   assert.equal(rows[0].agency_name, 'Northstar Marketing');
 });

@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import { google } from 'googleapis';
 import { CSV_HEADERS } from './pipeline.js';
+import { resolveClientDeliverble } from './agency-types.js';
 
 export const DEFAULT_GOOGLE_SHEET_ID = '1N4XsyA4IICyEFxlSH-m3uoePU8EMDBywQVauMz9wNQE';
 const DEFAULT_TAB_NAME = 'Sheet1';
@@ -8,6 +9,7 @@ const GOOGLE_SHEETS_SCOPE = ['https://www.googleapis.com/auth/spreadsheets'];
 const CONTACT_EMAIL_HEADER = 'contact_email';
 const CONTACT_NAME_HEADER = 'contact_name';
 const AGENCY_NAME_HEADER = 'agency_name';
+const CLIENT_DELIVERBLE_HEADER = 'client deliverble';
 const EMAIL_SUBJECT = 'Intro + Strategy Convo';
 
 function escapeFormulaLiteral(value) {
@@ -58,12 +60,29 @@ function buildIntroEmailBody({ firstName = 'there', agencyName = 'your agency' }
     '',
     `I wanted to introduce myself and start a conversation with you about strategy opportunities at ${agencyName}.`,
     '',
-    'INSERT BODY COPY',
+    'I built Brand Atlas to help teams turn complex brand and marketing inputs into clear direction.',
+    'Brand Atlas: https://brandatlas.vercel.app/',
+    '',
+    'Relevant work:',
+    'https://drive.google.com/file/d/1AP0uSJ3UvYVavdH36699jTabP5AH5OAW/view',
+    'https://benrussell.myportfolio.com/',
     '',
     'Excited to hear your thoughts!',
-    'Ben',
     '',
   ].join('\n');
+}
+
+function columnNumberToLetter(columnNumber) {
+  let current = Number(columnNumber);
+  let output = '';
+
+  while (current > 0) {
+    const remainder = (current - 1) % 26;
+    output = String.fromCharCode(65 + remainder) + output;
+    current = Math.floor((current - 1) / 26);
+  }
+
+  return output || 'A';
 }
 
 export function extractSpreadsheetId(rawValue) {
@@ -164,6 +183,14 @@ export function toSheetValues(rows) {
             agencyName,
           });
         }
+
+        if (header === CLIENT_DELIVERBLE_HEADER) {
+          return resolveClientDeliverble({
+            clientDeliverble: row?.[header],
+            agencyType: row?.agency_type,
+          });
+        }
+
         return String(row?.[header] ?? '');
       })
     );
@@ -194,9 +221,11 @@ export function fromSheetValues(values) {
 export async function readRowsFromGoogleSheet({ sheets, spreadsheetId, tabName }) {
   console.log('[sheets] reading rows', { spreadsheetId, tabName });
 
+  const lastColumnLetter = columnNumberToLetter(CSV_HEADERS.length);
+
   const response = await sheets.spreadsheets.values.get({
     spreadsheetId,
-    range: `${tabName}!A1:N`,
+    range: `${tabName}!A1:${lastColumnLetter}`,
   });
 
   const values = response?.data?.values || [];

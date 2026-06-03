@@ -6,6 +6,14 @@ export const ALLOWED_AGENCY_TYPES = [
   'brand_strategy_agency',
 ];
 
+const CLIENT_DELIVERBLE_BY_TYPE = new Map([
+  ['integrated_marketing_agency', 'Integrated strategy plus multi-channel campaign execution.'],
+  ['creative_agency', 'Creative campaign concepts and production-ready marketing assets.'],
+  ['pr_agency', 'PR strategy, media outreach, and reputation management programs.'],
+  ['brand_agency', 'Brand identity systems, messaging, and visual design deliverables.'],
+  ['brand_strategy_agency', 'Brand positioning, audience research, and strategic messaging frameworks.'],
+]);
+
 const AGENCY_TYPE_SET = new Set(ALLOWED_AGENCY_TYPES);
 
 const AGENCY_TYPE_ALIASES = new Map([
@@ -74,4 +82,14 @@ export function inferAgencyType({ agencyType, agencyName, companyDomain } = {}) 
 
   // Most records in this workflow are marketing agencies; default to integrated.
   return 'integrated_marketing_agency';
+}
+
+export function resolveClientDeliverble({ clientDeliverble, agencyType } = {}) {
+  const explicitClientDeliverble = String(clientDeliverble || '').trim();
+  if (explicitClientDeliverble) return explicitClientDeliverble;
+
+  const normalizedAgencyType = normalizeAgencyType(agencyType);
+  if (!normalizedAgencyType) return '';
+
+  return CLIENT_DELIVERBLE_BY_TYPE.get(normalizedAgencyType) || '';
 }

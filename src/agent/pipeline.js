@@ -1,4 +1,4 @@
-import { inferAgencyType } from './agency-types.js';
+import { inferAgencyType, resolveClientDeliverble } from './agency-types.js';
 
 const DECISION_KEYWORDS = [
   'chief',
@@ -18,6 +18,7 @@ const DECISION_KEYWORDS = [
 export const CSV_HEADERS = [
   'agency_name',
   'agency_type',
+  'client deliverble',
   'company_domain',
   'employee_count',
   'company_city',
@@ -65,12 +66,16 @@ export function buildLeadRows({ agencies, peopleByAgencyId, today = new Date().t
       if (!isDecisionMaker(person)) continue;
       if (!person.email) continue;
 
-      rows.push({
-        agency_name: agency.name || '',
-        agency_type: inferAgencyType({
+      const agencyType =
+        inferAgencyType({
           agencyName: agency.name,
           companyDomain: getDomain(agency.website_url),
-        }) || '',
+        }) || '';
+
+      rows.push({
+        agency_name: agency.name || '',
+        agency_type: agencyType,
+        'client deliverble': resolveClientDeliverble({ agencyType }),
         company_domain: getDomain(agency.website_url),
         employee_count: employeeCount,
         company_city: agency.city || '',
@@ -117,11 +122,22 @@ function escapeCsv(value) {
   return raw;
 }
 
+function getHeaderValue(row, header) {
+  if (header === 'client deliverble') {
+    return resolveClientDeliverble({
+      clientDeliverble: row?.[header],
+      agencyType: row?.agency_type,
+    });
+  }
+
+  return row?.[header];
+}
+
 export function toCsv(rows) {
   const lines = [CSV_HEADERS.join(',')];
 
   for (const row of rows || []) {
-    const line = CSV_HEADERS.map((header) => escapeCsv(row[header])).join(',');
+    const line = CSV_HEADERS.map((header) => escapeCsv(getHeaderValue(row, header))).join(',');
     lines.push(line);
   }
 

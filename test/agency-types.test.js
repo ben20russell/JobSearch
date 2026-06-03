@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { inferAgencyType, normalizeAgencyType } from '../src/agent/agency-types.js';
+import { inferAgencyType, normalizeAgencyType, resolveClientDeliverble } from '../src/agent/agency-types.js';
 
 test('normalizeAgencyType maps aliases to allowed values', () => {
   assert.equal(normalizeAgencyType('Public Relations'), 'pr_agency');
@@ -29,5 +29,16 @@ test('inferAgencyType derives best guess from agency name/domain', () => {
   assert.equal(
     inferAgencyType({ agencyName: 'Northstar Marketing', companyDomain: 'northstar.example' }),
     'integrated_marketing_agency'
+  );
+});
+
+test('resolveClientDeliverble maps agency type to a service snippet', () => {
+  assert.equal(
+    resolveClientDeliverble({ agencyType: 'creative_agency' }),
+    'Creative campaign concepts and production-ready marketing assets.'
+  );
+  assert.equal(
+    resolveClientDeliverble({ agencyType: 'brand_strategy_agency' }),
+    'Brand positioning, audience research, and strategic messaging frameworks.'
   );
 });
