@@ -13,6 +13,7 @@ const AGENCY_NAME_HEADER = 'agency_name';
 const CLIENT_DELIVERBLE_HEADER = 'client deliverble';
 const DEPARTMENT_HEADER = 'Department';
 const EMAIL_SUBJECT = 'Intro + Strategy Convo';
+const EMAIL_TEMPLATE_VERSION = '20260603';
 
 function escapeFormulaLiteral(value) {
   return String(value || '').replaceAll('"', '""');
@@ -48,7 +49,7 @@ export function toGmailComposeHyperlink(email, { firstName = 'there', agencyName
   const encodedSubject = encodeGmailParam(EMAIL_SUBJECT);
   const encodedBody = encodeGmailParam(buildIntroEmailBody({ firstName, agencyName }));
   const escapedLabel = escapeFormulaLiteral(normalizedEmail);
-  const composeUrl = `https://mail.google.com/mail/?view=cm&fs=1&tf=cm&to=${encodedEmail}&su=${encodedSubject}&body=${encodedBody}`;
+  const composeUrl = `https://mail.google.com/mail/?view=cm&fs=1&tf=cm&tmpl=${EMAIL_TEMPLATE_VERSION}&to=${encodedEmail}&su=${encodedSubject}&body=${encodedBody}`;
 
   return `=HYPERLINK("${composeUrl}","${escapedLabel}")`;
 }
@@ -176,6 +177,7 @@ export async function createSheetsClient(config) {
 
 export function toSheetValues(rows) {
   const lines = [CSV_HEADERS];
+  let composePreviewLogged = false;
 
   for (const row of rows || []) {
     const firstName = extractFirstName(row?.[CONTACT_NAME_HEADER]);
@@ -184,10 +186,20 @@ export function toSheetValues(rows) {
     lines.push(
       CSV_HEADERS.map((header) => {
         if (header === CONTACT_EMAIL_HEADER) {
-          return toGmailComposeHyperlink(row?.[header], {
+          const formula = toGmailComposeHyperlink(row?.[header], {
             firstName,
             agencyName,
           });
+          if (!composePreviewLogged && formula) {
+            composePreviewLogged = true;
+            console.log('[sheets] compose formula preview', {
+              templateVersion: EMAIL_TEMPLATE_VERSION,
+              agencyName,
+              firstName,
+              formula: formula.slice(0, 220),
+            });
+          }
+          return formula;
         }
 
         if (header === CLIENT_DELIVERBLE_HEADER) {
