@@ -69,7 +69,7 @@ function buildIntroEmailBody({ firstName = 'there', agencyName = 'your agency' }
     '',
     `I've been following the strategy work coming out of ${agencyName} and wanted to start a conversation with you as I explore my next career move.`,
     '',
-    "A little bit about me. For the last 16 years I've been building brands, executing campaigns and growing agencies. Most recently, I've been doing this with AI brands. I even built my own AI model to generate more structured, precise and faster audience research.",
+    "For the last 16 years I've been building brands, executing campaigns and growing agencies. Most recently, I've been doing this with AI brands. I even built my own AI model to generate more structured, precise and faster audience research.",
     '',
     "Can we set up time to get to know each other better? I'd love to understand your strategy needs.",
     '',
